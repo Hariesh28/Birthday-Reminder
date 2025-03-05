@@ -134,12 +134,14 @@ def fetch_user_info():
         return
 
     query_params = st.query_params
-    if "code" in query_params:
-        try:
-            full_callback_url = f"{REDIRECT_URI}?code={query_params['code']}"
-            if "state" in query_params:
-                full_callback_url += f"&state={query_params['state']}"
+    code = query_params.get("code", [None])[0]
+    state_value = query_params.get("state", [None])[0]
 
+    if code:
+        try:
+            full_callback_url = f"{REDIRECT_URI}?code={code}"
+            if state_value:
+                full_callback_url += f"&state={state_value}"
             token = oauth_client.fetch_token(
                 TOKEN_URL,
                 authorization_response=full_callback_url,
@@ -167,8 +169,9 @@ def fetch_user_info():
 
         except requests.exceptions.RequestException as e:
             st.error(f"OAuth request failed: {e}")
-        except authlib.integrations.base_client.errors.OAuthError:
+        except authlib.integrations.base_client.errors.OAuthError as err:
             st.session_state["page"] = "login"
+            st.error(f"OAuth error: {err}")
             rerun()
 
 def logout():
