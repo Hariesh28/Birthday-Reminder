@@ -134,6 +134,7 @@ def fetch_user_info():
         return
 
     query_params = st.query_params
+    st.write("Query Params:", st.query_params)
     if "code" in query_params:
         try:
             token = oauth_client.fetch_token(
@@ -208,6 +209,7 @@ def dashboard():
     st.markdown('<p class="small-font">Refresh the page to log in as a different user.</p>', unsafe_allow_html=True)
 
 # Run the login flow
+st.write(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
 fetch_user_info()
 
 if st.session_state["page"] == "dashboard":
