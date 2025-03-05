@@ -136,9 +136,13 @@ def fetch_user_info():
     query_params = st.query_params
     if "code" in query_params:
         try:
+            full_callback_url = f"{REDIRECT_URI}?code={query_params['code']}"
+            if "state" in query_params:
+                full_callback_url += f"&state={query_params['state']}"
+
             token = oauth_client.fetch_token(
                 TOKEN_URL,
-                authorization_response=f"{REDIRECT_URI}?code={query_params['code']}",
+                authorization_response=full_callback_url,
                 include_client_id=True
             )
 
