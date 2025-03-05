@@ -12,9 +12,9 @@ dotenv.load_dotenv()
 # Google OAuth Configuration
 CLIENT_ID = os.getenv('CLIENT_ID')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+REDIRECT_URI = os.getenv("REDIRECT_URI")
 AUTHORIZATION_URL = "https://accounts.google.com/o/oauth2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
-REDIRECT_URI = "https://birthday-reminder.streamlit.app"
 SCOPE = ["openid", "email", "profile"]
 
 oauth_client = OAuth2Session(CLIENT_ID, CLIENT_SECRET, scope=SCOPE, redirect_uri=REDIRECT_URI)
