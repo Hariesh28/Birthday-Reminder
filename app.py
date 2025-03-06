@@ -10,19 +10,14 @@ from authlib.integrations.requests_client import OAuth2Session
 dotenv.load_dotenv()
 
 # Google OAuth Configuration
-CLIENT_ID = os.getenv("CLIENT_ID")
-CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+CLIENT_ID = os.getenv('CLIENT_ID')
+CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 REDIRECT_URI = os.getenv("REDIRECT_URI")
 AUTHORIZATION_URL = "https://accounts.google.com/o/oauth2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 SCOPE = ["openid", "email", "profile"]
 
-oauth_client = OAuth2Session(
-    CLIENT_ID,
-    CLIENT_SECRET,
-    scope=SCOPE,
-    redirect_uri=REDIRECT_URI
-)
+oauth_client = OAuth2Session(CLIENT_ID, CLIENT_SECRET, scope=SCOPE, redirect_uri=REDIRECT_URI)
 
 def load_authorized_emails():
     try:
@@ -52,9 +47,7 @@ def rerun():
         st.experimental_rerun()
     except AttributeError:
         try:
-            from streamlit.runtime.scriptrunner.script_run_context import (
-                get_script_run_ctx, RerunException  # type: ignore
-            )
+            from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx, RerunException # type: ignore
             raise RerunException(get_script_run_ctx())
         except Exception:
             pass  # Fallback: do nothing
@@ -86,18 +79,17 @@ st.markdown(
             color: #6c757d;
             margin-bottom: 30px;
         }
-        /* Make a custom button style for the link */
-        .custom-login-button {
+        .stButton > button {
             background: linear-gradient(135deg, #ff7e67, #ff4081);
-            color: white !important;
+            color: white;
             font-size: 20px;
             padding: 14px 28px;
             border-radius: 12px;
             border: none;
             cursor: pointer;
-            text-decoration: none;
+            transition: transform 0.3s ease;
         }
-        .custom-login-button:hover {
+        .stButton > button:hover {
             transform: scale(1.05);
         }
         .profile-pic {
@@ -125,16 +117,15 @@ st.markdown(
 )
 
 def login():
+    """OAuth login button with redirection handling."""
     auth_url, state = oauth_client.create_authorization_url(AUTHORIZATION_URL)
     st.session_state["oauth_state"] = state
+
     st.markdown('<p class="big-font">🎂 Welcome to Birthday Finder! 🎂</p>', unsafe_allow_html=True)
     st.markdown('<p class="small-font">Login with Google to continue</p>', unsafe_allow_html=True)
-    login_link = f"""
-    <a href="{auth_url}" target="_self" class="custom-login-button">
-         🔑 Login with Google
-    </a>
-    """
-    st.markdown(login_link, unsafe_allow_html=True)
+
+    if st.button("🔑 Login with Google"):
+        st.markdown(f'<meta http-equiv="refresh" content="0;URL={auth_url}">', unsafe_allow_html=True)
 
 def fetch_user_info():
     """Fetch user info after login and check authorization."""
@@ -142,22 +133,13 @@ def fetch_user_info():
     if st.session_state.get("logged_in", False):
         return
 
-    # Extract code/state from query params as strings
-    code = st.query_params.get("code", [None])[0]
-    state_value = st.query_params.get("state", [None])[0]
-
+    query_params = st.query_params
     st.write("Query Params:", st.query_params)
-
-    if code:
+    if "code" in query_params:
         try:
-            # Build the full callback URL, including code and state
-            full_callback_url = f"{REDIRECT_URI}?code={code}"
-            if state_value:
-                full_callback_url += f"&state={state_value}"
-
             token = oauth_client.fetch_token(
                 TOKEN_URL,
-                authorization_response=full_callback_url,
+                authorization_response=f"{REDIRECT_URI}?code={query_params['code']}",
                 include_client_id=True
             )
 
@@ -226,13 +208,10 @@ def dashboard():
     st.markdown('<hr>', unsafe_allow_html=True)
     st.markdown('<p class="small-font">Refresh the page to log in as a different user.</p>', unsafe_allow_html=True)
 
-# Debug line to confirm secrets
-st.write("DEBUG ENV:", CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
-
 # Run the login flow
+st.write(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
 fetch_user_info()
 
-# Show the correct page
 if st.session_state["page"] == "dashboard":
     dashboard()
 else:
