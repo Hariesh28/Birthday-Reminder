@@ -86,17 +86,18 @@ st.markdown(
             color: #6c757d;
             margin-bottom: 30px;
         }
-        .stButton > button {
+        /* Make a custom button style for the link */
+        .custom-login-button {
             background: linear-gradient(135deg, #ff7e67, #ff4081);
-            color: white;
+            color: white !important;
             font-size: 20px;
             padding: 14px 28px;
             border-radius: 12px;
             border: none;
             cursor: pointer;
-            transition: transform 0.3s ease;
+            text-decoration: none;
         }
-        .stButton > button:hover {
+        .custom-login-button:hover {
             transform: scale(1.05);
         }
         .profile-pic {
@@ -131,12 +132,13 @@ def login():
     st.markdown('<p class="big-font">🎂 Welcome to Birthday Finder! 🎂</p>', unsafe_allow_html=True)
     st.markdown('<p class="small-font">Login with Google to continue</p>', unsafe_allow_html=True)
 
-    if st.button("🔑 Login with Google"):
-        # Use JavaScript redirect instead of meta refresh:
-        st.markdown(
-            f"<script>window.location.href='{auth_url}';</script>",
-            unsafe_allow_html=True
-        )
+    # Instead of st.button + meta refresh or JS, we provide a link styled as a button
+    login_link = f"""
+    <a href="{auth_url}" class="custom-login-button" target="_self">
+        🔑 Login with Google
+    </a>
+    """
+    st.markdown(login_link, unsafe_allow_html=True)
 
 def fetch_user_info():
     """Fetch user info after login and check authorization."""
