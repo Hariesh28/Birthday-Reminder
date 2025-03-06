@@ -125,17 +125,13 @@ st.markdown(
 )
 
 def login():
-    """OAuth login button with redirection handling."""
     auth_url, state = oauth_client.create_authorization_url(AUTHORIZATION_URL)
     st.session_state["oauth_state"] = state
-
     st.markdown('<p class="big-font">🎂 Welcome to Birthday Finder! 🎂</p>', unsafe_allow_html=True)
     st.markdown('<p class="small-font">Login with Google to continue</p>', unsafe_allow_html=True)
-
-    # Instead of st.button + meta refresh or JS, we provide a link styled as a button
     login_link = f"""
-    <a href="{auth_url}" class="custom-login-button" target="_self">
-        🔑 Login with Google
+    <a href="{auth_url}" target="_self" class="custom-login-button">
+         🔑 Login with Google
     </a>
     """
     st.markdown(login_link, unsafe_allow_html=True)
