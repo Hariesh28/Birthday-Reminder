@@ -80,7 +80,7 @@ streamlit run app.py
 Once running, the app will launch in your default web browser. You will be prompted to log in with your Google account. After authentication, you can access the dashboard and view the upcoming birthdays.
 
 ## Deployment
-The application is deployed and can be accessed here: [Birthday Reminder App](https://birthday-reminder.streamlit.app/)
+The application is deployed and can be accessed here: [Birthday Reminder App](https://birthday-reminder-qn9e.onrender.com/)
 
 ## File Structure
 ```
