@@ -1,6 +1,9 @@
-python-dotenv
+os
 pandas
-cryptography
-requests
-streamlit
 authlib
+requests
+birthday
+streamlit
+cryptography
+python-dotenv
+mysql-connector-python
