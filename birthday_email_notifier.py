@@ -1,8 +1,9 @@
 import os
+import pytz
 import dotenv
 import smtplib
 import birthday
-from datetime import date
+from datetime import datetime
 import google.generativeai as genai
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -26,7 +27,7 @@ def get_birthday_message(dob, sender: str):
     prompt = f"""
 You are a skilled birthday message writer. Your task is to generate a personalized birthday message that is completely self-contained and ready to be sent directly. The message should be warm, heartfelt, and sincere, incorporating the following details:
 - Name: Use a placeholder here
-- Date of Birth: {dob} (Calculate age from this date. Today's date {date.today().strftime("%d-%m-%Y")})
+- Date of Birth: {dob} (Calculate age from this date. Today's date {datetime.now(pytz.timezone('Asia/Kolkata')).replace(tzinfo=None).strftime("%d-%m-%Y")})
 - Relationship: My college college friend
 
 The message should include:

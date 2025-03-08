@@ -1,4 +1,5 @@
 import os
+import pytz
 import dotenv
 import datetime
 import pandas as pd
@@ -21,7 +22,7 @@ def get_dataframe() -> pd.DataFrame:
     df['Roll No'] = df['Roll No'].astype(str)
     df['Registration No'] = df['Registration No'].astype(str)
 
-    today = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today = datetime.datetime.now(pytz.timezone('Asia/Kolkata')).replace(hour=0, minute=0, second=0, microsecond=0).replace(tzinfo=None)
     # today = today.replace(day=28, month=6) # if we want to change today's date
 
     birthday_index = []
