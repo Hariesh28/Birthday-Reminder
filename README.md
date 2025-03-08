@@ -3,7 +3,8 @@
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 
-**Birthday Reminder** is a secure, web-based application built with Streamlit that integrates Google OAuth for authentication and a MySQL database for data storage. It features robust security measures, including SSL-encrypted database connections and Fernet encryption to protect sensitive birthday data.
+**Birthday Reminder** is a secure, web-based application built with Streamlit that integrates Google OAuth for authentication and a MySQL database for data storage. It features robust security measures, including SSL-encrypted database connections, Fernet encryption to protect sensitive birthday data, and innovative use of Gemini AI for personalized message generation.
+
 
 ---
 
@@ -26,9 +27,11 @@
 
 ## About
 
-**Birthday Reminder** is designed to help you manage and celebrate birthdays securely and efficiently. Built with Streamlit, the application leverages Google OAuth for secure user authentication and uses a MySQL database for storing authorized user emails. Sensitive birthday data information is encrypted using Fernet to ensure maximum confidentiality and integrity.
+**Birthday Reminder** is designed to help you manage and celebrate birthdays securely and efficiently. Built with Streamlit, the application leverages Google OAuth for secure user authentication and uses a MySQL database for storing authorized user emails. Sensitive birthday data is encrypted using Fernet to ensure maximum confidentiality and integrity. The app also utilizes Gemini AI to generate personalized birthday messages, and provides an option to email dashboard responses to users.
+
 
 ---
+
 
 ## Features
 
@@ -38,6 +41,8 @@
 - **Dynamic Dashboard:** View today’s birthdays in an intuitive, responsive interface.
 - **Admin Panel:** Manage authorized users directly from the dashboard.
 - **Enhanced UI/UX:** Custom CSS styles deliver a professional and engaging experience.
+- **Email Notification:** Users have the option to receive a copy of their dashboard responses via email.
+- **Gemini AI Integration:** Generate personalized birthday messages using Gemini AI.
 
 ---
 
@@ -81,16 +86,10 @@
 
 3. **Install Dependencies:**
 
-    If a `requirements.txt` file is provided:
+    A `requirements.txt` file is provided:
 
     ```bash
     pip install -r requirements.txt
-    ```
-
-    Otherwise, install the necessary packages manually:
-
-    ```bash
-    pip install streamlit google-auth google-auth-oauthlib mysql-connector-python cryptography pandas python-dotenv
     ```
 
 ---
@@ -122,6 +121,7 @@ Configure your MySQL database and ensure the following environment variables are
 
 - `ADMIN_EMAIL` – Administrator email address.
 - `KEY` – Fernet encryption key (generate using `encryption.py` if needed).
+- `API` – API key for Gemini AI.
 
 ---
 
@@ -134,6 +134,9 @@ streamlit run app.py
 ```
 
 The application will launch in your default web browser. Log in with your Google account to access your personalized dashboard displaying today’s birthdays.
+
+After logging in, you can now click the "Email me a copy" button to receive an email copy of your dashboard responses.
+Gemini AI is used within the app to generate personalized birthday messages.
 
 ### Troubleshooting
 
@@ -164,12 +167,14 @@ The application is deployed at [Birthday Reminder App](https://birthday-reminder
 ```
 Birthday-Reminder/
 │
-├── app.py                # Main Streamlit application with Google OAuth and MySQL integration
-├── birthday.py           # Logic for fetching and displaying birthday data from CSV
-├── encryption.py         # Script to encrypt sensitive birthday data
-├── secret.key            # File containing the Fernet encryption key
-├── .env                  # Environment variables file (not included in repository)
-└── README.md             # Project documentation
+├── app.py                      # Main Streamlit application with Google OAuth, MySQL integration, and Gemini AI usage
+├── birthday.py                 # Logic for fetching and displaying birthday data from CSV
+├── birthday_email_notifier.py  # Module for sending dashboard responses via email
+├── encryption.py               # Script to encrypt sensitive birthday data
+├── secret.key                  # File containing the Fernet encryption key
+├── .env                        # Environment variables file (not included in repository)
+└── README.md                   # Project documentation
+
 ```
 
 ---
