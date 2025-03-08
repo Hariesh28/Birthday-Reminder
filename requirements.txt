@@ -1,7 +1,6 @@
 pandas
 authlib
 requests
-birthday
 streamlit
 cryptography
 python-dotenv
