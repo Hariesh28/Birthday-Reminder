@@ -1,122 +1,214 @@
+
 # Birthday Reminder
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 
-Birthday Reminder is a **Streamlit-based web application** that allows users to log in using Google OAuth and view a list of upcoming birthdays. Only authorized users can access the dashboard, ensuring privacy and security.
+**Birthday Reminder** is a secure, web-based application built with Streamlit that integrates Google OAuth for authentication and a MySQL database for data storage. It features robust security measures, including SSL-encrypted database connections and Fernet encryption to protect sensitive birthday data.
+
+---
 
 ## Table of Contents
+
 - [About](#about)
 - [Features](#features)
 - [Technologies](#technologies)
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
+- [Database & Data Encryption](#database--data-encryption)
 - [Deployment](#deployment)
 - [File Structure](#file-structure)
 - [Contributing](#contributing)
 - [License](#license)
 - [Contact](#contact)
 
+---
+
 ## About
-Birthday Reminder is designed to help you keep track of important birthdays in a secure and interactive way. Built with Streamlit, this application leverages Google OAuth for secure authentication, ensuring that only authorized users can access sensitive birthday data. The application also includes encryption for data storage, protecting your information.
+
+**Birthday Reminder** is designed to help you manage and celebrate birthdays securely and efficiently. Built with Streamlit, the application leverages Google OAuth for secure user authentication and uses a MySQL database for storing authorized user emails. Sensitive birthday data information is encrypted using Fernet to ensure maximum confidentiality and integrity.
+
+---
 
 ## Features
-- **Secure Authentication:** Log in with your Google account using OAuth.
-- **Dashboard View:** Easily view a list of upcoming birthdays.
-- **Data Protection:** Birthday data is encrypted before storage.
-- **User-Friendly Interface:** Built with Streamlit for a seamless interactive experience.
+
+- **Secure Authentication:** Log in with your Google account via OAuth.
+- **MySQL Integration:** Store and manage birthday and user data in a secure MySQL database.
+- **Data Encryption:** Encrypt sensitive birthday data using Fernet encryption.
+- **Dynamic Dashboard:** View today’s birthdays in an intuitive, responsive interface.
+- **Admin Panel:** Manage authorized users directly from the dashboard.
+- **Enhanced UI/UX:** Custom CSS styles deliver a professional and engaging experience.
+
+---
 
 ## Technologies
-- **Python:** The main programming language.
-- **Streamlit:** For creating the web application interface.
-- **Google OAuth:** To enable secure login.
-- **Encryption Modules:** For protecting sensitive data.
-- **JSON & CSV:** For data storage and management.
+
+- **Python:** Primary programming language.
+- **Streamlit:** Framework for building interactive web applications.
+- **Google OAuth:** For secure user authentication.
+- **MySQL:** Database system for storing application data.
+- **MySQL Connector/Python:** For MySQL integration.
+- **Cryptography (Fernet):** For data encryption.
+- **Pandas:** For data manipulation and analysis.
+- **python-dotenv:** For managing environment variables.
+
+---
 
 ## Installation
 
 ### Prerequisites
-- Python 3.7 or later
-- A Google account for OAuth authentication
+
+- Python 3.7 or later.
+- MySQL database (with SSL support).
+- A Google account for OAuth authentication.
+- Git (for cloning the repository).
 
 ### Steps
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Hariesh28/Birthday-Reminder.git
-   cd Birthday-Reminder
-   ```
-2. **Set up a virtual environment (optional but recommended):**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate   # For Windows: venv\Scripts\activate
-   ```
-3. **Install dependencies:**
-   If a `requirements.txt` file is provided:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   Otherwise, install the necessary packages manually:
-   ```bash
-   pip install streamlit google-auth google-auth-oauthlib
-   ```
+
+1. **Clone the Repository:**
+
+    ```bash
+    git clone https://github.com/Hariesh28/Birthday-Reminder.git
+    cd Birthday-Reminder
+    ```
+
+2. **Set Up a Virtual Environment (Recommended):**
+
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
+
+3. **Install Dependencies:**
+
+    If a `requirements.txt` file is provided:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+    Otherwise, install the necessary packages manually:
+
+    ```bash
+    pip install streamlit google-auth google-auth-oauthlib mysql-connector-python cryptography pandas python-dotenv
+    ```
+
+---
 
 ## Configuration
 
 ### Google OAuth Setup
-1. Navigate to the [Google Developers Console](https://console.developers.google.com/).
+
+1. Visit the [Google Developers Console](https://console.developers.google.com/).
 2. Create a new project and enable the OAuth 2.0 API.
 3. Configure the OAuth consent screen and create OAuth credentials.
-4. Download the `credentials.json` file and place it in the project root directory.
-5. Update the app configuration as necessary (for example, by specifying allowed domains).
+4. Download the credentials file and update your environment variables:
+    - `CLIENT_ID`
+    - `CLIENT_SECRET`
+    - `REDIRECT_URI`
 
-### Data Encryption
-- The application uses `encryption.py` to encrypt birthday data, which is stored in `data-encrypted.csv`. Make sure to set up your encryption keys or any other configuration as needed.
+### MySQL Database Setup
+
+Configure your MySQL database and ensure the following environment variables are set (typically in a `.env` file):
+
+- `MYSQL_HOST`
+- `MYSQL_PORT`
+- `MYSQL_USER`
+- `MYSQL_PASSWORD`
+- `MYSQL_DATABASE`
+- `AIVEN_CA_PEM` (SSL CA certificate content)
+
+### Application Settings
+
+- `ADMIN_EMAIL` – Administrator email address.
+- `KEY` – Fernet encryption key (generate using `encryption.py` if needed).
+
+---
 
 ## Usage
-To run the application locally, execute the following command:
+
+To run the application locally, execute:
+
 ```bash
 streamlit run app.py
 ```
-Once running, the app will launch in your default web browser. You will be prompted to log in with your Google account. After authentication, you can access the dashboard and view the upcoming birthdays.
+
+The application will launch in your default web browser. Log in with your Google account to access your personalized dashboard displaying today’s birthdays.
+
+### Troubleshooting
+
+- Verify that your environment variables (especially for Google OAuth and MySQL) are correctly set.
+- Ensure the SSL certificate content is provided via `AIVEN_CA_PEM` for secure MySQL connections.
+- Check that all dependencies are properly installed and compatible with your Python version.
+
+---
+
+## Database & Data Encryption
+
+**MySQL Database:**
+All application data, including authorized user emails, is stored in a MySQL database. Secure SSL connections (using the `AIVEN_CA_PEM` certificate) ensure data integrity and privacy.
+
+**Data Encryption:**
+Sensitive birthday data is encrypted using Fernet before being stored in the database. Use the provided `encryption.py` script to encrypt data and generate a secure key (`secret.key`), which is then used for encryption and decryption.
+
+---
 
 ## Deployment
-The application is deployed and can be accessed here: [Birthday Reminder App](https://birthday-reminder-qn9e.onrender.com/)
+
+The application is deployed at [Birthday Reminder App](https://birthday-reminder-qn9e.onrender.com) on Render, while the MySQL database is hosted on [Aiven](https://aiven.io) for secure and reliable data management. Ensure that all environment variables are securely managed in your deployment environment. Containerization with Docker is also recommended for consistent deployments.
+
+---
 
 ## File Structure
+
 ```
 Birthday-Reminder/
 │
-├── app.py             # Main Streamlit application
-├── birthday.py        # Handles birthday data and related logic
-├── encryption.py      # Encryption and decryption utilities
-├── data.json          # JSON file for storing birthday information
-├── data-encrypted.csv # Encrypted CSV file containing birthday records
-├── LICENSE            # Project license (GPL-3.0)
-└── README.md          # Project documentation
+├── app.py                # Main Streamlit application with Google OAuth and MySQL integration
+├── birthday.py           # Logic for fetching and displaying birthday data from CSV
+├── encryption.py         # Script to encrypt sensitive birthday data
+├── secret.key            # File containing the Fernet encryption key
+├── .env                  # Environment variables file (not included in repository)
+└── README.md             # Project documentation
 ```
 
-## Contributing
-Contributions are welcome! To contribute:
-1. Fork the repository.
-2. Create a new branch:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. Commit your changes:
-   ```bash
-   git commit -m "Add some feature"
-   ```
-4. Push to your branch:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-5. Open a pull request with a clear description of your changes.
+---
 
-Please follow the existing coding standards and include tests when applicable.
+## Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. **Fork the Repository.**
+2. **Create a New Branch:**
+
+    ```bash
+    git checkout -b feature/your-feature-name
+    ```
+
+3. **Commit Your Changes:**
+
+    ```bash
+    git commit -m "Description of changes"
+    ```
+
+4. **Push to Your Branch:**
+
+    ```bash
+    git push origin feature/your-feature-name
+    ```
+
+5. **Open a Pull Request:** Provide a detailed description of your changes and reference any related issues.
+
+---
 
 ## License
+
 This project is licensed under the **GPL-3.0 License**. See the [LICENSE](LICENSE) file for details.
 
+---
+
 ## Contact
+
 For questions or feedback, please open an issue on this repository or contact the maintainer directly:
+
 - **Hariesh28** - [GitHub Profile](https://github.com/Hariesh28)
