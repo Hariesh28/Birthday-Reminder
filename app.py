@@ -1,15 +1,99 @@
 import os
-import json
 import dotenv
 import authlib
 import birthday
 import requests
 import streamlit as st
+import mysql.connector
 from authlib.integrations.requests_client import OAuth2Session
 
+# Load environment variables
 dotenv.load_dotenv()
 
-# Google OAuth Configuration
+# Retrieve the admin email from the environment variables
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+
+
+def get_connection():
+    """
+    Establish and return a secure MySQL database connection using SSL.
+
+    Raises:
+        FileNotFoundError: If the SSL CA certificate file is not found.
+        mysql.connector.Error: If the connection to the MySQL database fails.
+    """
+    # Determine current directory
+    current_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
+    ssl_ca_path = os.path.join(current_dir, "aiven-ca.pem")
+
+    if not os.path.exists(ssl_ca_path):
+        st.error(f"SSL CA certificate file not found: {ssl_ca_path}")
+        raise FileNotFoundError(f"CA file not found: {ssl_ca_path}")
+
+    try:
+        conn = mysql.connector.connect(
+            host=os.getenv("MYSQL_HOST"),
+            port=int(os.getenv("MYSQL_PORT")),
+            user=os.getenv("MYSQL_USER"),
+            password=os.getenv("MYSQL_PASSWORD"),
+            database=os.getenv("MYSQL_DATABASE"),
+            ssl_ca=ssl_ca_path,
+            ssl_verify_cert=True,
+            connection_timeout=10,
+            tls_versions=["TLSv1.2"],
+            use_pure=True
+        )
+        return conn
+    except mysql.connector.Error as e:
+        st.error(f"MySQL connection failed: {e}")
+        raise
+
+
+def load_authorized_emails():
+    """
+    Retrieve and return the set of authorized emails from the database.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT email FROM authorized_emails")
+    results = cursor.fetchall()
+    emails = {row[0] for row in results}
+    cursor.close()
+    conn.close()
+    return emails
+
+
+def add_authorized_email(email):
+    """
+    Add a new authorized email to the database.
+
+    Args:
+        email (str): The email address to add.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT IGNORE INTO authorized_emails (email) VALUES (%s)", (email,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+def remove_authorized_email(email):
+    """
+    Remove an authorized email from the database.
+
+    Args:
+        email (str): The email address to remove.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM authorized_emails WHERE email = %s", (email,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+# --- Google OAuth Configuration ---
 CLIENT_ID = os.getenv('CLIENT_ID')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 REDIRECT_URI = os.getenv("REDIRECT_URI")
@@ -19,17 +103,7 @@ SCOPE = ["openid", "email", "profile"]
 
 oauth_client = OAuth2Session(CLIENT_ID, CLIENT_SECRET, scope=SCOPE, redirect_uri=REDIRECT_URI)
 
-def load_authorized_emails():
-    try:
-        with open("data.json", "r") as file:
-            data = json.load(file)
-            return set(data.get("AUTHORIZED_EMAILS", []))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return set()
-
-AUTHORIZED_EMAILS = load_authorized_emails()
-
-# Initialize session state
+# --- Session State Initialization ---
 if "logged_in_user" not in st.session_state:
     st.session_state["logged_in_user"] = None
 if "user_name" not in st.session_state:
@@ -41,22 +115,25 @@ if "logged_in" not in st.session_state:
 if "page" not in st.session_state:
     st.session_state["page"] = "login"
 
-# Helper function for rerunning the app
+
 def rerun():
+    """
+    Rerun the Streamlit app.
+    """
     try:
         st.experimental_rerun()
     except AttributeError:
         try:
-            from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx, RerunException # type: ignore
+            from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx, RerunException
             raise RerunException(get_script_run_ctx())
         except Exception:
-            pass  # Fallback: do nothing
+            pass
 
-# 🎨 Enhanced UI Styles
+
+# --- Enhanced UI Styles ---
 st.markdown(
     """
     <style>
-        /* Overall body style */
         body {
             background: linear-gradient(135deg, #f8f9fa, #e9ecef);
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -116,8 +193,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+
 def login():
-    """OAuth login button with redirection handling."""
+    """
+    Display the OAuth login interface and redirect the user to Google's authorization page.
+    """
     auth_url, state = oauth_client.create_authorization_url(AUTHORIZATION_URL)
     st.session_state["oauth_state"] = state
 
@@ -127,9 +207,12 @@ def login():
     if st.button("🔑 Login with Google"):
         st.markdown(f'<meta http-equiv="refresh" content="0;URL={auth_url}">', unsafe_allow_html=True)
 
+
 def fetch_user_info():
-    """Fetch user info after login and check authorization."""
-    # If already logged in, skip processing OAuth code in query params
+    """
+    Process the OAuth callback, fetch the user's information, and verify their authorization.
+    """
+    # Skip OAuth processing if already logged in
     if st.session_state.get("logged_in", False):
         return
 
@@ -151,7 +234,7 @@ def fetch_user_info():
             name = user_info.get("name", "User")
             picture = user_info.get("picture", None)
 
-            if email in AUTHORIZED_EMAILS:
+            if email in load_authorized_emails():
                 st.session_state["logged_in_user"] = email
                 st.session_state["user_name"] = name
                 st.session_state["profile_pic"] = picture
@@ -160,23 +243,52 @@ def fetch_user_info():
             else:
                 st.session_state["logged_in"] = False
                 st.warning("⚠️ You are not authorized to access this dashboard.")
-
         except requests.exceptions.RequestException as e:
             st.error(f"OAuth request failed: {e}")
         except authlib.integrations.base_client.errors.OAuthError:
             st.session_state["page"] = "login"
             rerun()
 
+
 def logout():
-    """Clear session state to log out the user."""
+    """
+    Log out the current user and reset the session state.
+    """
     st.session_state["logged_in_user"] = None
     st.session_state["user_name"] = None
     st.session_state["profile_pic"] = None
     st.session_state["logged_in"] = False
     st.session_state["page"] = "login"
 
+
+def admin_panel():
+    """
+    Display the admin panel for managing authorized emails.
+    """
+    authorized_emails = load_authorized_emails()
+    st.markdown("## Admin: Manage Authorized Emails")
+    st.write("Currently authorized emails:")
+    for email in sorted(authorized_emails):
+        st.write(email)
+        if st.button(f"Remove {email}", key=f"remove_{email}"):
+            if email == ADMIN_EMAIL:
+                st.warning("Cannot remove admin email!")
+            else:
+                remove_authorized_email(email)
+                st.success(f"Removed {email}")
+                rerun()
+    new_email = st.text_input("Add new authorized email", key="new_email_input")
+    if st.button("Add Email"):
+        if new_email:
+            add_authorized_email(new_email)
+            st.success(f"Added {new_email}")
+            rerun()
+
+
 def dashboard():
-    """Personalized dashboard with enhanced UI."""
+    """
+    Render the personalized dashboard for the logged-in user.
+    """
     if not st.session_state.get("logged_in", False):
         st.warning("⚠️ Unauthorized access. Please login.")
         return
@@ -184,19 +296,16 @@ def dashboard():
     user_name = st.session_state["user_name"]
     st.markdown(f'<p class="big-font">🎉 Welcome, {user_name}! 🎉</p>', unsafe_allow_html=True)
 
-    # Display profile picture if available
     if st.session_state.get("profile_pic"):
         st.image(st.session_state["profile_pic"], width=140, caption=user_name)
 
     st.write("Here are today's birthdays:")
     df = birthday.get_dataframe()
-
     if not df.empty:
         st.dataframe(df.style.set_properties(**{'text-align': 'center'}))
     else:
         st.markdown('<p class="small-font">🎊 No birthdays today! Enjoy your day! 🎊</p>', unsafe_allow_html=True)
 
-    # Use on_click callback for logout so it immediately logs out on one click.
     col1, col2 = st.columns(2)
     with col1:
         st.button("🚪 Logout", on_click=logout, key="logout_button")
@@ -207,7 +316,11 @@ def dashboard():
     st.markdown('<hr>', unsafe_allow_html=True)
     st.markdown('<p class="small-font">Refresh the page to log in as a different user.</p>', unsafe_allow_html=True)
 
-# Run the login flow
+    if st.session_state.get("logged_in_user") == ADMIN_EMAIL:
+        admin_panel()
+
+
+# --- Main Application Flow ---
 fetch_user_info()
 
 if st.session_state["page"] == "dashboard":
