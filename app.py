@@ -6,6 +6,7 @@ import requests
 import tempfile
 import streamlit as st
 import mysql.connector
+import birthday_email_notifier
 from authlib.integrations.requests_client import OAuth2Session
 
 # Load environment variables
@@ -301,14 +302,17 @@ def dashboard():
         return
 
     user_name = st.session_state["user_name"]
+    user_email = st.session_state["logged_in_user"]
+
     st.markdown(f'<p class="big-font">🎉 Welcome, {user_name}! 🎉</p>', unsafe_allow_html=True)
 
     if st.session_state.get("profile_pic"):
         st.image(st.session_state["profile_pic"], width=140, caption=user_name)
 
-    st.write("Here are today's birthdays:")
     df = birthday.get_dataframe()
+
     if not df.empty:
+        st.write("Here are today's birthdays:")
         st.dataframe(df.style.set_properties(**{'text-align': 'center'}))
     else:
         st.markdown('<p class="small-font">🎊 No birthdays today! Enjoy your day! 🎊</p>', unsafe_allow_html=True)
@@ -321,6 +325,15 @@ def dashboard():
             rerun()
 
     st.markdown('<hr>', unsafe_allow_html=True)
+
+    st.markdown('<p class="small-font">Would you like a copy of these responses via email?</p>', unsafe_allow_html=True)
+    if st.button("📧 Email me a copy"):
+
+        if birthday_email_notifier.send_email(user_name, user_email):
+            st.success("A copy of the responses has been sent to your email!")
+        else:
+            st.error(f"Failed to send email")
+
     st.markdown('<p class="small-font">Refresh the page to log in as a different user.</p>', unsafe_allow_html=True)
 
     if st.session_state.get("logged_in_user") == ADMIN_EMAIL:
