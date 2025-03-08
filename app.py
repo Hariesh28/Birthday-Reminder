@@ -123,6 +123,10 @@ if "logged_in" not in st.session_state:
 if "page" not in st.session_state:
     st.session_state["page"] = "login"
 
+st.set_page_config(
+    page_title="Birthday Reminder",
+    page_icon=":sparkles:"
+)
 
 def rerun():
     """
@@ -151,7 +155,7 @@ st.markdown(
             to { opacity: 1; }
         }
         .big-font {
-            font-size: 48px !important;
+            font-size: 44px !important;
             text-align: center;
             font-weight: bold;
             color: #343a40;
