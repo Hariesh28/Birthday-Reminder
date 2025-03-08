@@ -3,6 +3,7 @@ import dotenv
 import authlib
 import birthday
 import requests
+import tempfile
 import streamlit as st
 import mysql.connector
 from authlib.integrations.requests_client import OAuth2Session
@@ -13,24 +14,31 @@ dotenv.load_dotenv()
 # Retrieve the admin email from the environment variables
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
 
-
 def get_connection():
     """
-    Establish and return a secure MySQL database connection using SSL.
+    Establishes and returns a secure MySQL database connection using SSL.
+    The SSL CA certificate is obtained from the 'AIVEN_CA_PEM' environment variable.
 
     Raises:
-        FileNotFoundError: If the SSL CA certificate file is not found.
-        mysql.connector.Error: If the connection to the MySQL database fails.
+        EnvironmentError: If the SSL certificate content is not provided.
+        mysql.connector.Error: If the database connection fails.
     """
-    # Determine current directory
-    current_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else os.getcwd()
-    ssl_ca_path = os.path.join(current_dir, "aiven-ca.pem")
+    # Retrieve the SSL CA certificate content from the environment variable
+    ssl_ca_content = os.getenv("AIVEN_CA_PEM")
+    if not ssl_ca_content:
+        st.error("SSL CA certificate not found in environment variable 'AIVEN_CA_PEM'")
+        raise EnvironmentError("SSL CA certificate not found in environment variable 'AIVEN_CA_PEM'")
 
-    if not os.path.exists(ssl_ca_path):
-        st.error(f"SSL CA certificate file not found: {ssl_ca_path}")
-        raise FileNotFoundError(f"CA file not found: {ssl_ca_path}")
+    # Write the certificate content to a secure temporary file with a .pem extension
+    with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".pem") as tmp_file:
+        tmp_file.write(ssl_ca_content)
+        ssl_ca_path = tmp_file.name
+
+    # Set file permissions to allow read access only to the file owner
+    os.chmod(ssl_ca_path, 0o600)
 
     try:
+        # Establish a secure connection to the MySQL database using the temporary certificate file
         conn = mysql.connector.connect(
             host=os.getenv("MYSQL_HOST"),
             port=int(os.getenv("MYSQL_PORT")),
@@ -47,7 +55,6 @@ def get_connection():
     except mysql.connector.Error as e:
         st.error(f"MySQL connection failed: {e}")
         raise
-
 
 def load_authorized_emails():
     """
