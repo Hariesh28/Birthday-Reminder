@@ -111,7 +111,7 @@ def get_email_schedule_status(email):
     result = cursor.fetchone()
     cursor.close()
     conn.close()
-    # If there's no record, default to enabled (False)
+    # If there's no record, default to disabled (False), i.e., opt out
     return False if result is None else (result[0] == 1)
 
 def set_email_schedule_status(email, enabled):
