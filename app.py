@@ -100,6 +100,39 @@ def remove_authorized_email(email):
     cursor.close()
     conn.close()
 
+def get_email_schedule_status(email):
+    """
+    Retrieve the email scheduling status for the given user.
+    Returns True if enabled (or if no record exists, default to True).
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT scheduling_enabled FROM email_schedule WHERE email = %s", (email,))
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    # If there's no record, default to enabled (False)
+    return False if result is None else (result[0] == 1)
+
+def set_email_schedule_status(email, enabled):
+    """
+    Insert or update the email scheduling status for a user.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    # Insert a new record or update existing one using ON DUPLICATE KEY UPDATE
+    cursor.execute(
+        """
+        INSERT INTO email_schedule (email, scheduling_enabled)
+        VALUES (%s, %s)
+        ON DUPLICATE KEY UPDATE scheduling_enabled = %s
+        """,
+        (email, int(enabled), int(enabled))
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 
 # --- Google OAuth Configuration ---
 CLIENT_ID = os.getenv('CLIENT_ID')
@@ -298,9 +331,6 @@ def admin_panel():
 
 
 def dashboard():
-    """
-    Render the personalized dashboard for the logged-in user.
-    """
     if not st.session_state.get("logged_in", False):
         st.warning("⚠️ Unauthorized access. Please login.")
         return
@@ -308,41 +338,103 @@ def dashboard():
     user_name = st.session_state["user_name"]
     user_email = st.session_state["logged_in_user"]
 
-    st.markdown(f'<p class="big-font">🎉 Welcome, {user_name}! 🎉</p>', unsafe_allow_html=True)
-
+    # Header Section: Welcome message and profile picture
+    st.markdown(
+        f'''
+        <div style="text-align: center; margin-top: 20px;">
+            <h1 style="font-family: Helvetica, sans-serif; color: #343a40;">
+                🎉 Welcome, {user_name}! 🎉
+            </h1>
+        </div>
+        ''',
+        unsafe_allow_html=True
+    )
     if st.session_state.get("profile_pic"):
         st.image(st.session_state["profile_pic"], width=140, caption=user_name)
-
-    df = birthday.get_dataframe()
-
-    if not df.empty:
-        st.write("Here are today's birthdays:")
-        st.dataframe(df.style.set_properties(**{'text-align': 'center'}))
-    else:
-        st.markdown('<p class="small-font">🎊 No birthdays today! Enjoy your day! 🎊</p>', unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.button("🚪 Logout", on_click=logout, key="logout_button")
-    with col2:
-        if st.button("🔄 Refresh Birthdays"):
-            rerun()
-
     st.markdown('<hr>', unsafe_allow_html=True)
 
-    st.markdown('<p class="small-font">Would you like a copy of these responses via email?</p>', unsafe_allow_html=True)
-    if st.button("📧 Email me a copy"):
+    # Birthdays Section: Display today's birthdays
+    st.markdown(
+        '''
+        <h2 style="text-align: center; color: #ff4081;">Today's Birthdays</h2>
+        ''',
+        unsafe_allow_html=True
+    )
+    df = birthday.get_dataframe()
+    if not df.empty:
+        st.dataframe(df.style.set_properties(**{'text-align': 'center'}))
+    else:
+        st.markdown(
+            '''
+            <p style="text-align: center; font-size: 20px; color: #6c757d;">
+                🎊 No birthdays today! Enjoy your day! 🎊
+            </p>
+            ''',
+            unsafe_allow_html=True
+        )
+    st.markdown('<hr>', unsafe_allow_html=True)
 
-        if birthday_email_notifier.send_email(user_name, user_email):
-            st.success("A copy of the responses has been sent to your email!")
-        else:
-            st.error(f"Failed to send email")
+    # Actions Section: Logout and Refresh buttons in two columns
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🚪 Logout", key="logout_button"):
+            logout()
+            rerun()
+    with col2:
+        if st.button("🔄 Refresh Birthdays", key="refresh_button"):
+            rerun()
+    st.markdown('<hr>', unsafe_allow_html=True)
 
-    st.markdown('<p class="small-font">Refresh the page to log in as a different user.</p>', unsafe_allow_html=True)
+    # Email Notifications and Copy Section inside a container
+    with st.container():
+        st.markdown(
+            '''
+            <h3 style="color: #ff4081;">Email Notifications</h3>
+            ''',
+            unsafe_allow_html=True
+        )
+        # Retrieve current email scheduling preference (default to True if not set)
+        current_status = get_email_schedule_status(user_email)
+        new_status = st.checkbox("Enable Daily Email Notification", value=current_status, key="email_notification_checkbox")
+        if new_status != current_status:
+            set_email_schedule_status(user_email, new_status)
+            if new_status:
+                st.success("Daily email notifications have been enabled!")
+            else:
+                st.info("Daily email notifications have been disabled!")
 
+        st.markdown('<br>', unsafe_allow_html=True)
+        st.markdown(
+            '''
+            <h3 style="color: #ff4081;">Email Copy of Responses</h3>
+            ''',
+            unsafe_allow_html=True
+        )
+        if st.button("📧 Email me a copy", key="email_copy_button"):
+            if birthday_email_notifier.send_email(user_name, user_email):
+                st.success("A copy of the responses has been sent to your email!")
+            else:
+                st.error("Failed to send email")
+    st.markdown('<hr>', unsafe_allow_html=True)
+    st.markdown(
+        '''
+        <p style="text-align: center; font-size: 16px; color: #6c757d;">
+            Refresh the page to log in as a different user.
+        </p>
+        ''',
+        unsafe_allow_html=True
+    )
+
+    # Admin Panel: Display for admin user only
     if st.session_state.get("logged_in_user") == ADMIN_EMAIL:
+        st.markdown('<hr>', unsafe_allow_html=True)
+        st.markdown(
+            '''
+            <h2 style="color: #343a40;">Admin Panel</h2>
+            ''',
+            unsafe_allow_html=True
+        )
         admin_panel()
-
 
 # --- Main Application Flow ---
 fetch_user_info()
