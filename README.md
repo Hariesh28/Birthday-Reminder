@@ -42,6 +42,7 @@
 - **Admin Panel:** Manage authorized users directly from the dashboard.
 - **Enhanced UI/UX:** Custom CSS styles deliver a professional and engaging experience.
 - **Email Notification:** Users have the option to receive a copy of their dashboard responses via email.
+- **Email Scheduling:** Users can opt in to receive daily birthday email notifications. By default, new users are opted out and must enable email notifications from their dashboard. Scheduled emails are sent twice daily at 8:00 AM and 6:00 PM IST.
 - **Gemini AI Integration:** Generate personalized birthday messages using Gemini AI.
 
 ---
@@ -156,6 +157,19 @@ Sensitive birthday data is encrypted using Fernet before being stored in the dat
 
 ---
 
+Email Scheduling
+----------------
+
+Users can choose to receive daily email notifications with birthday reminders:
+
+*   **Default Setting:** Users are opted out by default. No email notifications will be sent until the user explicitly enables them.
+
+*   **Scheduling Times:** Emails are scheduled to be sent twice daily—at 8:00 AM and 6:00 PM IST.
+
+*   **User Control:** Enable or disable the email scheduling from within your dashboard. The setting is stored in the email\_schedule table in the database.
+
+---
+
 ## Deployment
 
 The application is deployed at [Birthday Reminder App](https://birthday-reminder-qn9e.onrender.com) on Render, while the MySQL database is hosted on [Aiven](https://aiven.io) for secure and reliable data management. Ensure that all environment variables are securely managed in your deployment environment. Containerization with Docker is also recommended for consistent deployments.
@@ -170,6 +184,7 @@ Birthday-Reminder/
 ├── app.py                      # Main Streamlit application with Google OAuth, MySQL integration, and Gemini AI usage
 ├── birthday.py                 # Logic for fetching and displaying birthday data from CSV
 ├── birthday_email_notifier.py  # Module for sending dashboard responses via email
+├── daily_email.py              # Script for scheduling and sending daily email notifications
 ├── encryption.py               # Script to encrypt sensitive birthday data
 ├── secret.key                  # File containing the Fernet encryption key
 ├── .env                        # Environment variables file (not included in repository)
