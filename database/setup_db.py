@@ -22,29 +22,36 @@ def main():
     )
     cursor = conn.cursor()
 
-    # 1) Create the table if it doesn't exist
-    create_table_sql = """
+    # 1) Create the authorized_emails table if it doesn't exist
+    create_authorized_emails_sql = """
     CREATE TABLE IF NOT EXISTS authorized_emails (
         email VARCHAR(255) PRIMARY KEY
-    )
+    );
     """
-    cursor.execute(create_table_sql)
+    cursor.execute(create_authorized_emails_sql)
 
-    # 2) Insert the admin email if not already present
+    # 2) Create the email_schedule table if it doesn't exist
+    create_email_schedule_sql = """
+    CREATE TABLE IF NOT EXISTS email_schedule (
+        email VARCHAR(255) PRIMARY KEY,
+        scheduling_enabled TINYINT(1) NOT NULL DEFAULT 1
+    );
+    """
+    cursor.execute(create_email_schedule_sql)
+
+    # 3) Insert the admin email into authorized_emails if not already present
     insert_sql = """
     INSERT IGNORE INTO authorized_emails (email)
-    VALUES (%s)
+    VALUES (%s);
     """
-
     ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '')
-
     cursor.execute(insert_sql, (ADMIN_EMAIL,))
 
     conn.commit()
     cursor.close()
     conn.close()
 
-    print("Setup complete! The 'authorized_emails' table was created (if needed), and 'hariesh28606@gmail.com' has been inserted.")
+    print(f"Setup complete! Tables 'authorized_emails' and 'email_schedule' have been created (if needed), and admin email ({ADMIN_EMAIL}) has been inserted.")
 
 if __name__ == "__main__":
     main()
