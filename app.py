@@ -338,41 +338,33 @@ def dashboard():
     user_name = st.session_state["user_name"]
     user_email = st.session_state["logged_in_user"]
 
-    # Header Section: Welcome message and profile picture
-    st.markdown(
-        f'''
-        <div style="text-align: center; margin-top: 20px;">
-            <h1 style="font-family: Helvetica, sans-serif; color: #343a40;">
-                🎉 Welcome, {user_name}! 🎉
-            </h1>
-        </div>
-        ''',
-        unsafe_allow_html=True
-    )
-    if st.session_state.get("profile_pic"):
-        st.image(st.session_state["profile_pic"], width=140, caption=user_name)
-    st.markdown('<hr>', unsafe_allow_html=True)
+    tabs = st.tabs(["Today","Upcoming","Missed"])
+    with tabs[0]:
+        st.header("🎂 Today's Birthdays")
+        today_df = birthday.get_dataframe()
+        if today_df.empty:
+            st.info("No birthdays today! 🎉")
+        else:
+            st.dataframe(today_df, use_container_width=True)
 
-    # Birthdays Section: Display today's birthdays
-    st.markdown(
-        '''
-        <h2 style="text-align: center; color: #ff4081;">Today's Birthdays</h2>
-        ''',
-        unsafe_allow_html=True
-    )
-    df = birthday.get_dataframe()
-    if not df.empty:
-        st.dataframe(df.style.set_properties(**{'text-align': 'center'}))
-    else:
-        st.markdown(
-            '''
-            <p style="text-align: center; font-size: 20px; color: #6c757d;">
-                🎊 No birthdays today! Enjoy your day! 🎊
-            </p>
-            ''',
-            unsafe_allow_html=True
-        )
-    st.markdown('<hr>', unsafe_allow_html=True)
+    with tabs[1]:
+        st.header("🔜 Upcoming Birthdays")
+        count = st.slider("How many days ahead?", 1, 10, 2)
+        up_df = birthday.get_upcoming_birthdays(count)
+        if up_df.empty:
+            st.info("No upcoming birthdays found.")
+        else:
+            for date, grp in up_df.groupby('Birthday Date'):
+                st.subheader(date)
+                st.table(grp.drop(columns=['Birthday Date']))
+
+    with tabs[2]:
+        st.header("⏪ Missed Birthdays")
+        miss_df = birthday.get_missed_birthdays()
+        if miss_df.empty:
+            st.info("No missed birthdays (yesterday).")
+        else:
+            st.table(miss_df.drop(columns=['Missed Date']))
 
     # Actions Section: Logout and Refresh buttons in two columns
     col1, col2 = st.columns(2)
